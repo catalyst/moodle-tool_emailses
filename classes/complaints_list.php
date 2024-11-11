@@ -75,7 +75,7 @@ class complaints_list extends \table_sql implements renderable {
             "u.id, u.email, up1.name, up2.name",
             "{$DB->sql_cast_char2int('up1.value')} AS bouncecount", // Casting required for table sorting on numeric values.
             "{$DB->sql_cast_char2int('up2.value')} AS sendcount",
-            get_all_user_name_fields(true, 'u'),
+            helper::get_username_fields('u'),
         ];
         $from = '{user} u '; // Keep this trailing space.
         $joins = [
