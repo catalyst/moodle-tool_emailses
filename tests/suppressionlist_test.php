@@ -17,14 +17,6 @@
 namespace tool_emailutils;
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG;
-
-if (!class_exists('\Aws\SesV2\SesV2Client')) {
-    if (file_exists($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php')) {
-        require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-    }
-}
-
 /**
  * Test case for suppression list functionality.
  *

@@ -25,10 +25,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version  = 2024101700;
-$plugin->release  = 2024101700;
-$plugin->requires = 2020061500;
+$plugin->version  = 2024111400;
+$plugin->release  = 2024111400;
+$plugin->requires = 2024100700;
 $plugin->component = 'tool_emailutils';
-$plugin->dependencies = ['local_aws' => 2020061500];
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->supported = [39, 404];
+$plugin->supported = [405, 405];

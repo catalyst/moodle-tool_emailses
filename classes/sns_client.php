@@ -27,8 +27,6 @@ namespace tool_emailutils;
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
