@@ -287,7 +287,7 @@ class sns_client {
     /**
      * Get SNS Notification object
      *
-     * @return sns_notification SNS Notification Object
+     * @return sns_notification|null SNS Notification Object
      */
     public function get_notification() {
         if (isset($this->notification)) {
