@@ -30,6 +30,7 @@
  */
 function tool_emailutils_security_checks() {
     return [
+        new \tool_emailutils\check\bounces(),
         new \tool_emailutils\check\dnsspf(),
         new \tool_emailutils\check\dnsdkim(),
         new \tool_emailutils\check\dnsdmarc(),

@@ -37,6 +37,13 @@ namespace tool_emailutils;
  */
 class helper {
 
+    /** Default bounce ratio from over_bounce_threshold() */
+    const DEFAULT_BOUNCE_RATIO = 0.2;
+
+    /** Default minimum bounces from over_bounce_threshold() */
+    const DEFAULT_MIN_BOUNCES = 10;
+
+
     /**
      * Gets the username fields for the fullname function. Contains legacy support for 3.9.
      * @param string $tablealias
@@ -51,5 +58,37 @@ class helper {
             // Legacy support for 3.9.
             return get_all_user_name_fields(true, $tablealias);
         }
+    }
+
+    /**
+     *
+     * Gets the min bounces, otherwise return the default.
+     * @return int
+     */
+    public static function get_min_bounces(): int {
+        global $CFG;
+        return $CFG->minbounce ?? self::DEFAULT_MIN_BOUNCES;
+    }
+
+    /**
+     * Gets the bounce rate config, otherwise return the default.
+     * @return float
+     */
+    public static function get_bounce_ratio(): float {
+        global $CFG;
+        return $CFG->bounceratio ?? self::DEFAULT_BOUNCE_RATIO;
+    }
+
+    /**
+     * Gets the bounce config, or the defaults.
+     * @return array [handlebounces, minbounces, bounceratio]
+     */
+    public static function get_bounce_config(): array {
+        global $CFG;
+        return [
+            $CFG->handlebounces,
+            self::get_min_bounces(),
+            self::get_bounce_ratio(),
+        ];
     }
 }
