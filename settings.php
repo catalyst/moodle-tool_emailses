@@ -118,7 +118,7 @@ if ($hassiteconfig) {
     $ADMIN->add('tool_emailutils', new admin_externalpage(
         'toolemailutilssuppressionlist',
         new lang_string('suppressionlist', 'tool_emailutils'),
-        new moodle_url('/admin/tool/emailutils/suppression_list.php')
+        new moodle_url('/admin/tool/emailutils/aws/suppression_list.php')
     ));
 
     // Add AWS credentials settings.
