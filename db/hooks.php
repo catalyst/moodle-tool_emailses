@@ -15,27 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Lib
+ * Hook callbacks for tool_emailutils
  *
- * @package    tool_emailutils
- * @copyright  2018 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author     Harry Barnard <harry.barnard@catalyst-eu.net>
+ * @package   tool_emailutils
+ * @author    Benjamin Walker (benjaminwalker@catalyst-au.net)
+ * @copyright 2024 Catalyst IT
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Security checks.
- *
- * @return array
- */
-function tool_emailutils_security_checks() {
-    return [
-        new \tool_emailutils\check\dnsspf(),
-        new \tool_emailutils\check\dnsdkim(),
-        new \tool_emailutils\check\dnsdmarc(),
-        new \tool_emailutils\check\dnsmx(),
-        new \tool_emailutils\check\dnsnoreply(),
-        new \tool_emailutils\check\dnspostmastertools(),
-    ];
-}
+defined('MOODLE_INTERNAL') || die();
 
+$callbacks = [
+    [
+        'hook' => \core_user\hook\extend_bulk_user_actions::class,
+        'callback' => '\tool_emailutils\hook_callbacks::extend_bulk_user_actions',
+        'priority' => 0,
+    ],
+];
