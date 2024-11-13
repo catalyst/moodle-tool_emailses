@@ -23,7 +23,7 @@
  * @author     Waleed ul hassan <waleed.hassan@catalyst-eu.net>
  */
 
-require_once(__DIR__ . '/../../../config.php');
+require_once(__DIR__ . '/../../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
 // Ensure the user is logged in and has the necessary permissions.
@@ -49,7 +49,7 @@ if ($action === 'download') {
     echo html_writer::start_tag('div', ['class' => 'suppressionlist-download']);
     echo html_writer::tag('p', get_string('suppressionlistdesc', 'tool_emailutils'));
     echo html_writer::link(
-        new moodle_url('/admin/tool/emailutils/suppression_list.php', ['action' => 'download']),
+        new moodle_url('/admin/tool/emailutils/aws/suppression_list.php', ['action' => 'download']),
         get_string('downloadsuppressionlist', 'tool_emailutils'),
         ['class' => 'btn btn-primary']
     );
