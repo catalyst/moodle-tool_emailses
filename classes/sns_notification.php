@@ -142,7 +142,7 @@ class sns_notification {
      * Eg. "Type about x from y"
      * @return string Message as string
      */
-    public function get_messageasstring(): bool {
+    public function get_messageasstring(): string {
         if ($this->is_complaint() || $this->is_bounce()) {
             return $this->get_type() . ' about ' . $this->get_source_email() . ' from ' . $this->get_destination();
         } else {
