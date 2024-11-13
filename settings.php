@@ -38,9 +38,9 @@ if ($hassiteconfig) {
     ));
 
     $ADMIN->add('tool_emailutils', new admin_externalpage(
-        'tool_emailutils_list',
-        new lang_string('list', 'tool_emailutils'),
-        new moodle_url('/admin/tool/emailutils/index.php')
+        'tool_emailutils_bounces',
+        get_string('reportbounces', 'tool_emailutils'),
+        new moodle_url('/admin/tool/emailutils/bounces.php')
     ));
 
     // DNS check settings.
