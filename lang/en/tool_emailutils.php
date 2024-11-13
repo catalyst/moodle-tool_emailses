@@ -35,6 +35,7 @@ $string['bouncecount'] = 'Bounce count';
 $string['bounceratio'] = 'Bounce ratio';
 $string['bounces'] = 'For a list of bounces, visit {$a} and search for emails ending with ".b.invalid."';
 $string['bouncesreset'] = 'Bounces have been reset for the selected users';
+$string['checkbounces'] = 'Email bounces';
 $string['checkdnsdkim'] = 'DNS Email DKIM check';
 $string['checkdnsdmarc'] = 'DNS Email DMARC check';
 $string['checkdnsmx'] = 'DNS Email MX check';
