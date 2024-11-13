@@ -122,6 +122,76 @@ class sns_notification {
     }
 
     /**
+     * Gets the type of bounce that occured
+     * https://docs.aws.amazon.com/ses/latest/dg/notification-contents.html#bounce-types
+     * @return string Bounce type
+     */
+    public function get_bouncetype(): string {
+        if ($this->is_bounce()) {
+            return $this->message['bounce']['bounceType'];
+        }
+        return '';
+    }
+
+    /**
+     * Gets the subtype of bounce that occured
+     * https://docs.aws.amazon.com/ses/latest/dg/notification-contents.html#bounce-types
+     * @return string Bounce sub type
+     */
+    public function get_bouncesubtype(): string {
+        if ($this->is_bounce()) {
+            return $this->message['bounce']['bounceSubType'];
+        }
+        return '';
+    }
+
+    /**
+     * Gets the type of complaint that occured
+     * https://docs.aws.amazon.com/ses/latest/dg/notification-contents.html#complaint-types
+     * @return string Complaint type
+     */
+    public function get_complainttype(): string {
+        if ($this->is_complaint()) {
+            // Feedback type is only available if a feedback report is attached to the complaint.
+            return $this->message['complaint']['complaintFeedbackType'] ?? '';
+        }
+        return '';
+    }
+
+    /**
+     * Gets the subtype of complaint that occured
+     * This should either be field can either be null or OnAccountSuppressionList
+     * https://docs.aws.amazon.com/ses/latest/dg/notification-contents.html#complaint-object
+     * @return string Complaint sub type
+     */
+    public function get_complaintsubtype(): string {
+        if ($this->is_complaint()) {
+            return $this->message['complaint']['complaintSubType'] ?? '';
+        }
+        return '';
+    }
+
+    /**
+     * Returns all the message subtypes as an array
+     * @return string subtypes as a array
+     */
+    protected function get_subtypes(): array {
+        $subtypes = [];
+        if ($this->is_complaint()) {
+            $subtypes = [
+                $this->get_complainttype(),
+                $this->get_complaintsubtype(),
+            ];
+        } else if ($this->is_bounce()) {
+            $subtypes = [
+                $this->get_bouncetype(),
+                $this->get_bouncesubtype(),
+            ];
+        }
+        return array_filter($subtypes);
+    }
+
+    /**
      * Is the message about a complaint?
      * @return bool Is complaint?
      */
@@ -144,7 +214,10 @@ class sns_notification {
      */
     public function get_messageasstring(): string {
         if ($this->is_complaint() || $this->is_bounce()) {
-            return $this->get_type() . ' about ' . $this->get_source_email() . ' from ' . $this->get_destination();
+            $subtypes = $this->get_subtypes();
+            $subtypestring = !empty($subtypes) ? ' (' . implode(':', $subtypes) . ')' : '';
+            $type = $this->get_type() . $subtypestring;
+            return $type . ' about ' . $this->get_source_email() . ' from ' . $this->get_destination();
         } else {
             http_response_code(400); // Invalid request.
             exit;
