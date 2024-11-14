@@ -32,6 +32,7 @@ $string['aws_secret'] = 'AWS Secret Key';
 $string['aws_secret_desc'] = 'Your AWS Secret Access Key';
 $string['bouncecheckfull'] = 'Are you absolutely sure you want to reset the bounce count for {$a} ?';
 $string['bouncecount'] = 'Bounce count';
+$string['bounceconfig'] = 'Bounce handling is enabled. Emails will not be sent to addresses with over {$a->minbounces} bounces and a bounce ratio above {$a->bounceratio}. These values can be changed in config.php.';
 $string['bounceratio'] = 'Bounce ratio';
 $string['bounces'] = 'For a list of bounces, visit {$a} and search for emails ending with ".b.invalid."';
 $string['bouncesreset'] = 'Bounces have been reset for the selected users';
@@ -43,7 +44,7 @@ $string['checkdnsnoreply'] = 'DNS Email noreply shape check';
 $string['checkdnspostmastertools'] = 'Check Post master tools';
 $string['checkdnsspf'] = 'DNS Email SPF check';
 $string['complaints'] = 'For a list of complaints, search for ".c.invalid"';
-$string['configmissing'] = 'Missing config.php setting ($CFG->handlebounces) please review config-dist.php for more information.';
+$string['configmissing'] = 'Bounce handling is not enabled as $CFG->handlebounces is not set. Please review config-dist.php for more information.';
 $string['dkimmanager'] = 'SPF & DKIM manager';
 $string['dkimmanagerhelp'] = '<p>This shows all DKIM key pairs / selectors available for email signing, including those made by this admin tool or put in place by external tools such as open-dkim. For most systems this is the end to end setup:</p>
 <ol>
