@@ -19,9 +19,10 @@ A rough roadmap with no set timelines:
 ## Branches
 The following lists the supported branch to use based on your Moodle version.
 
-| Moodle version | Branch           |
-|----------------|------------------|
-| Moodle 3.9+    | MOODLE_39_STABLE |
+| Moodle version | Branch            |
+|----------------|-------------------|
+| Moodle 3.9-4.3 | MOODLE_39_STABLE  |
+| Moodle 4.4+    | MOODLE_404_STABLE |
 
 ## Installation
 
