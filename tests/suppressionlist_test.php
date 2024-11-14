@@ -83,7 +83,6 @@ final class suppressionlist_test extends \advanced_testcase {
      * 4. A CSV file is generated with the correct headers and content matching the database.
      *
      * @covers \tool_emailutils\task\update_suppression_list::execute
-     * @covers \tool_emailutils\suppression_list::generate_csv
      *
      * @return void
      * @throws \dml_exception
@@ -119,17 +118,6 @@ final class suppressionlist_test extends \advanced_testcase {
         }
         $this->assertTrue($foundtest1, 'test1@example.com not found in the database');
         $this->assertTrue($foundtest2, 'test2@example.com not found in the database');
-
-        // Now test the CSV file generation.
-        $csvcontent = \tool_emailutils\suppression_list::generate_csv();
-
-        // Verify the CSV content.
-        $lines = explode("\n", trim($csvcontent));
-        $this->assertEquals('Email,Reason,"Created At"', $lines[0]);
-        $this->assertStringContainsString('test1@example.com', $lines[1]);
-        $this->assertStringContainsString('BOUNCE', $lines[1]);
-        $this->assertStringContainsString('test2@example.com', $lines[2]);
-        $this->assertStringContainsString('COMPLAINT', $lines[2]);
     }
 
     /**

@@ -63,5 +63,20 @@ function xmldb_tool_emailutils_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024100101, 'tool', 'emailutils');
     }
 
+    if ($oldversion < 2024111800) {
+
+        // The stored timestamps have lost timezones. These are replaced daily so easier to just remove instead of fix.
+        $DB->delete_records('tool_emailutils_suppression');
+
+        // Changing type of field created_at on table tool_emailutils_suppression to int.
+        $table = new xmldb_table('tool_emailutils_suppression');
+        $field = new xmldb_field('created_at', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'reason');
+
+        // Launch change of type for field created_at.
+        $dbman->change_field_type($table, $field);
+
+        // Emailutils savepoint reached.
+        upgrade_plugin_savepoint(true, 2024111800, 'tool', 'emailutils');
+    }
     return true;
 }
