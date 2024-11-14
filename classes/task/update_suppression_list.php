@@ -27,12 +27,6 @@ namespace tool_emailutils\task;
 
 defined('MOODLE_INTERNAL') || die();
 
-if (!class_exists('\Aws\SesV2\SesV2Client')) {
-    if (file_exists($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php')) {
-        require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-    }
-}
-
 /**
  * Scheduled task class for updating the email suppression list.
  *
