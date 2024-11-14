@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Email suppression list download page.
+ * Email suppression list report page.
  *
  * @package    tool_emailutils
  * @copyright  2024 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
@@ -23,37 +23,41 @@
  * @author     Waleed ul hassan <waleed.hassan@catalyst-eu.net>
  */
 
-require_once(__DIR__ . '/../../../../config.php');
-require_once($CFG->libdir . '/adminlib.php');
+use core_reportbuilder\system_report_factory;
+use tool_emailutils\reportbuilder\local\systemreports\suppression_list;
 
-// Ensure the user is logged in and has the necessary permissions.
-require_login();
-require_capability('moodle/site:config', context_system::instance());
+require(__DIR__.'/../../../../config.php');
+require_once($CFG->libdir.'/adminlib.php');
 
-$action = optional_param('action', '', PARAM_ALPHA);
+admin_externalpage_setup('tool_emailutils_bounces', '', [], '', ['pagelayout' => 'report']);
 
-if ($action === 'download') {
-    $content = \tool_emailutils\suppression_list::generate_csv();
-    $filename = 'email_suppression_list_' . date('Y-m-d') . '.csv';
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . strlen($content));
-    echo $content;
-    exit;
+echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('aws_suppressionlist', 'tool_emailutils'));
+
+// Add warnings if the suppression list hasn't been set up or run recently.
+if (empty(get_config('tool_emailutils', 'enable_suppression_list'))) {
+    echo $OUTPUT->notification(get_string('aws_suppressionlist_disabled', 'tool_emailutils'), 'warning');
 } else {
-    // Display the download page.
-    admin_externalpage_setup('toolemailutilssuppressionlist');
-    echo $OUTPUT->header();
-    echo $OUTPUT->heading(get_string('suppressionlist', 'tool_emailutils'));
-
-    echo html_writer::start_tag('div', ['class' => 'suppressionlist-download']);
-    echo html_writer::tag('p', get_string('suppressionlistdesc', 'tool_emailutils'));
-    echo html_writer::link(
-        new moodle_url('/admin/tool/emailutils/aws/suppression_list.php', ['action' => 'download']),
-        get_string('downloadsuppressionlist', 'tool_emailutils'),
-        ['class' => 'btn btn-primary']
-    );
-    echo html_writer::end_tag('div');
-
-    echo $OUTPUT->footer();
+    // Check if the update task has run recently.
+    $task = \core\task\manager::get_scheduled_task('\tool_emailutils\task\update_suppression_list');
+    if ($task && $task->is_enabled()) {
+        $lastrun = $task->get_last_run_time();
+        if (empty($lastrun)) {
+            echo $OUTPUT->notification(get_string('aws_suppressionlist_tasknever', 'tool_emailutils'), 'warning');
+        } else if ($lastrun < (time() - DAYSECS)) {
+            echo $OUTPUT->notification(get_string('aws_suppressionlist_taskupdated', 'tool_emailutils', format_time(time() - $lastrun)), 'warning');
+        } else {
+            // Always show the last update time as info.
+            echo $OUTPUT->notification(get_string('aws_suppressionlist_taskupdated', 'tool_emailutils', format_time(time() - $lastrun)), 'info');
+        }
+    } else {
+        echo $OUTPUT->notification(get_string('aws_suppressionlist_taskdisabled', 'tool_emailutils'), 'warning');
+    }
 }
+
+$report = system_report_factory::create(suppression_list::class, context_system::instance());
+
+echo $report->output();
+
+echo $OUTPUT->footer();
+

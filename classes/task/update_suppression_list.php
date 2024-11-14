@@ -110,7 +110,7 @@ class update_suppression_list extends \core\task\scheduled_task {
                     $suppressionlist[] = [
                         'email' => $item['EmailAddress'],
                         'reason' => $item['Reason'],
-                        'created_at' => $item['LastUpdateTime']->format('Y-m-d H:i:s'),
+                        'created_at' => $item['LastUpdateTime']->getTimestamp(),
                     ];
                 }
                 $params['NextToken'] = $result['NextToken'] ?? null;
