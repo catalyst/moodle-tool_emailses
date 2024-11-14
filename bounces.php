@@ -25,6 +25,7 @@
  */
 
 use core_reportbuilder\system_report_factory;
+use tool_emailutils\helper;
 use tool_emailutils\reportbuilder\local\systemreports\email_bounces;
 
 require(__DIR__.'/../../../config.php');
@@ -34,6 +35,17 @@ admin_externalpage_setup('tool_emailutils_bounces', '', [], '', ['pagelayout' =>
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('reportbounces', 'tool_emailutils'));
+
+// Render config used for calculating bounce threshold.
+[$handlebounces, $minbounces, $bounceratio] = helper::get_bounce_config();
+if (empty($handlebounces)) {
+    echo $OUTPUT->notification(get_string('configmissing', 'tool_emailutils'));
+} else {
+    echo $OUTPUT->notification(get_string('bounceconfig', 'tool_emailutils', [
+        'minbounces' => $minbounces,
+        'bounceratio' => $bounceratio,
+    ]), 'info');
+}
 
 $report = system_report_factory::create(email_bounces::class, context_system::instance());
 
