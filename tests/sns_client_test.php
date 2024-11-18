@@ -14,20 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace tool_emailutils;
+
 /**
- * Version
+ * Tests for SNS client.
  *
  * @package    tool_emailutils
- * @copyright  2018 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
+ * @author     Benjamin Walker <benjaminwalker@catalyst-au.net>
+ * @copyright  Catalyst IT 2024
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author     Harry Barnard <harry.barnard@catalyst-eu.net>
  */
+class sns_client_test extends \advanced_testcase {
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version  = 2024111801;
-$plugin->release  = 2024111801;
-$plugin->requires = 2024042200;
-$plugin->component = 'tool_emailutils';
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->supported = [404, 405];
+    /**
+     * Test required libs are installed.
+     *
+     * @covers \tool_emailutils\sns_client::__construct
+     */
+    public function test_lib(): void {
+        // Use process message to ensure no errors from missing libs are produced.
+        // This should result in an exception not an error.
+        $this->expectException(\Exception::class);
+        $client = new \tool_emailutils\sns_client('', '', '');
+        $client->process_message();
+    }
+}
