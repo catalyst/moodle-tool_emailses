@@ -27,6 +27,10 @@ namespace tool_emailutils;
 
 defined('MOODLE_INTERNAL') || die;
 
+require_once(__DIR__ . '/../lib/aws-sns-message-validator/src/Exception/InvalidSnsMessageException.php');
+require_once(__DIR__ . '/../lib/aws-sns-message-validator/src/Message.php');
+require_once(__DIR__ . '/../lib/aws-sns-message-validator/src/MessageValidator.php');
+
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
