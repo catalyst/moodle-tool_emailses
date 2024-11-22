@@ -44,8 +44,7 @@ if ($confirm && confirm_sesskey()) {
     list($in, $params) = $DB->get_in_or_equal($SESSION->bulk_users);
     $rs = $DB->get_recordset_select('user', "id $in", $params, '', 'id, ' . \tool_emailutils\helper::get_username_fields());
     foreach ($rs as $user) {
-        // Reset the user bounce count.
-        set_bounce_count($user, true);
+        \tool_emailutils\helper::reset_bounce_count($user);
     }
     $rs->close();
     echo $OUTPUT->box_start('generalbox', 'notice');

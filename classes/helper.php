@@ -26,6 +26,8 @@
 
 namespace tool_emailutils;
 
+use tool_emailutils\event\bounce_count_reset;
+
 /**
  * Helper class for tool_emailutils.
  *
@@ -67,7 +69,8 @@ class helper {
      */
     public static function get_min_bounces(): int {
         global $CFG;
-        return $CFG->minbounce ?? self::DEFAULT_MIN_BOUNCES;
+        // The core check for using the default uses empty().
+        return empty($CFG->minbounces) ? self::DEFAULT_MIN_BOUNCES : $CFG->minbounces;
     }
 
     /**
@@ -76,7 +79,64 @@ class helper {
      */
     public static function get_bounce_ratio(): float {
         global $CFG;
-        return $CFG->bounceratio ?? self::DEFAULT_BOUNCE_RATIO;
+        // The core check for using the default uses empty().
+        return empty($CFG->bounceratio) ? self::DEFAULT_BOUNCE_RATIO : $CFG->bounceratio;
+    }
+
+    /**
+     * Is a positive bounce ratio being used?
+     * @return bool use bounce ratio?
+     */
+    public static function use_bounce_ratio(): bool {
+        if (self::get_bounce_ratio() > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Does the config imply the use of consecutive bounce count?
+     *
+     * Consecutive bounce counts should be used when possible as it's best practice.
+     * This requires a non-positive bounce ratio to ignore send count and pass threshold checks.
+     * Delivery notifications may also need to be set up to accurately track successful deliveries.
+     *
+     * @return bool use consecutive bounce count?
+     */
+    public static function use_consecutive_bounces(): bool {
+        return !self::use_bounce_ratio();
+    }
+
+
+    /**
+     * Resets the bounce count of a user and fires off an event.
+     * @param \stdClass $resetuser user who will have their bounce count reset
+     * @return void
+     */
+    public static function reset_bounce_count(\stdClass $resetuser): void {
+        global $USER;
+
+        // If bounce ratio is being used, the send count also needs to be reset.
+        $resetsendcount = self::use_bounce_ratio();
+
+        $bouncecount = get_user_preferences('email_bounce_count', null, $resetuser);
+        $sendcount = get_user_preferences('email_send_count', null, $resetuser);
+        if (!isset($bouncecount) && (!$resetsendcount || !isset($sendcount))) {
+            return;
+        }
+
+        // Swap to set_bounce_count($resetuser, true) once MDL-73798 is integrated.
+        unset_user_preference('email_bounce_count', $resetuser);
+        if ($resetsendcount) {
+            unset_user_preference('email_send_count', $resetuser);
+        }
+
+        $event = bounce_count_reset::create([
+            'userid' => $USER->id,
+            'relateduserid' => $resetuser->id,
+            'context'  => \context_system::instance(),
+        ]);
+        $event->trigger();
     }
 
     /**

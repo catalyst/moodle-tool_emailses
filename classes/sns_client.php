@@ -64,6 +64,9 @@ class sns_client {
     /** Bounce */
     const BOUNCE_TYPE = 'Bounce';
 
+    /** Delivery */
+    const DELIVERY_TYPE = 'Delivery';
+
     /**
      * SNS Message Object
      * @var \Aws\Sns\Message
@@ -182,25 +185,28 @@ class sns_client {
      * Validates the incoming message and sets up the sns_notification message.
      * This accepts message types of 'Notification'.
      *
+     * @param Message|null $message message injector for unit testing
      * @return bool Successful validtion
      */
-    public function process_message() {
+    public function process_message(?Message $message = null): bool {
         $this->validator = new MessageValidator();
         $this->client = new Client();
         $this->notification = new sns_notification();
 
         // Get the message from the POST data.
-        $this->message = Message::fromRawPostData();
+        $this->message = PHPUNIT_TEST && isset($message) ? $message : Message::fromRawPostData();
 
         $isvalidmessage = false;
 
         // Validate the incoming message.
-        try {
-            $this->validator->validate($this->message);
-        } catch (InvalidSnsMessageException $e) {
-            // Message not valid!
-            http_response_code(400); // Bad request.
-            return $isvalidmessage;
+        if (!PHPUNIT_TEST) {
+            try {
+                $this->validator->validate($this->message);
+            } catch (InvalidSnsMessageException $e) {
+                // Message not valid!
+                http_response_code(400); // Bad request.
+                return $isvalidmessage;
+            }
         }
 
         // Process the message depending on its type.

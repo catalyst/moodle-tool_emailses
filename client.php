@@ -28,7 +28,6 @@
  */
 
 use tool_emailutils\sns_client;
-use tool_emailutils\event\notification_received;
 
 define('NO_MOODLE_COOKIES', true);
 
@@ -46,30 +45,6 @@ if (!$client->is_authorised()) {
 }
 
 if ($client->process_message() && $client->is_notification()) {
-    global $DB;
-
     $notification = $client->get_notification();
-
-    $user = $DB->get_record('user', ['email' => $notification->get_destination()], 'id, email');
-
-    if ($user) {
-        if ($notification->is_complaint()) {
-            $type = 'c';
-        } else if ($notification->is_bounce()) {
-            $type = 'b';
-        } else {
-            http_response_code(400); // Invalid request.
-            exit;
-        }
-
-        // Increment the user preference email_bounce_count.
-        set_bounce_count($user);
-
-        $event = notification_received::create([
-            'relateduserid' => $user->id,
-            'context'  => context_system::instance(),
-            'other' => $notification->get_messageasstring(),
-        ]);
-        $event->trigger();
-    }
+    $notification->process_notification();
 }

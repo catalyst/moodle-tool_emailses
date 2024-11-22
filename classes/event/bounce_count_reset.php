@@ -15,19 +15,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Tool emailutils - Created classification event
+ * Bounce count reset event
  *
- * @package    tool_emailutils
- * @copyright  2018 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author     Maria Sorica <maria.sorica@catalyst-eu.net>
+ * @package   tool_emailutils
+ * @author    Benjamin Walker (benjaminwalker@catalyst-au.net)
+ * @copyright 2024 Catalyst IT
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace tool_emailutils\event;
 
 /**
  * Event
  */
-class notification_received extends \core\event\base {
+class bounce_count_reset extends \core\event\base {
 
     /**
      * Initialise required event data properties.
@@ -43,7 +43,7 @@ class notification_received extends \core\event\base {
      * @return string
      */
     public static function get_name(): string {
-        return get_string('event:notificationreceived', 'tool_emailutils');
+        return get_string('event:bouncecountreset', 'tool_emailutils');
     }
 
     /**
@@ -51,7 +51,8 @@ class notification_received extends \core\event\base {
      *
      * @return string
      */
-    public function get_description(): mixed {
-        return $this->other;
+    public function get_description(): string {
+        $reason = empty($this->userid) ? 'because an email was delivered successfully' : 'manually';
+        return "The user with id '$this->relateduserid' had their email bounce count reset $reason.";
     }
 }
