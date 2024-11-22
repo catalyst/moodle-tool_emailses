@@ -25,12 +25,30 @@
 
 namespace tool_emailutils;
 
+use tool_emailutils\event\notification_received;
+use tool_emailutils\event\over_bounce_threshold;
+
 /**
  * Amazon SNS Notification Class
  *
  * Parses Amazon SES complaints and bounces contained in SNS Notification messages.
  */
 class sns_notification {
+
+    /** Bounce subtypes that should be blocked immediately */
+    const BLOCK_IMMEDIATELY = [
+        'Permanent:General',
+        'Permanent:NoEmail',
+        'Permanent:Suppressed',
+        'Permanent:OnAccountSuppressionList',
+    ];
+
+    /** Bounce subtypes that should be blocked after a few failures */
+    const BLOCK_SOFTLY = [
+        'Undetermined:Undetermined',
+        'Transient:General',
+        'Transient:MailboxFull',
+    ];
 
     /**
      * SNS Message
@@ -173,9 +191,9 @@ class sns_notification {
 
     /**
      * Returns all the message subtypes as an array
-     * @return string subtypes as a array
+     * @return string subtypes as a string, split by ':'
      */
-    protected function get_subtypes(): array {
+    protected function get_subtypes(): string {
         $subtypes = [];
         if ($this->is_complaint()) {
             $subtypes = [
@@ -188,7 +206,7 @@ class sns_notification {
                 $this->get_bouncesubtype(),
             ];
         }
-        return array_filter($subtypes);
+        return implode(':', array_filter($subtypes));
     }
 
     /**
@@ -208,6 +226,133 @@ class sns_notification {
     }
 
     /**
+     * Is the message about a delivery?
+     * @return bool Is delivery?
+     */
+    public function is_delivery(): bool {
+        return $this->get_type() === sns_client::DELIVERY_TYPE;
+    }
+
+    /**
+     * Does this bounce type imply this should be blocked immediately?
+     * @return bool block immediately?
+     */
+    public function should_block_immediately(): bool {
+        return in_array($this->get_subtypes(), self::BLOCK_IMMEDIATELY);
+    }
+
+    /**
+     * Does this bounce type imply this should be blocked softly?
+     * @return bool block softly?
+     */
+    public function should_block_softly(): bool {
+        return in_array($this->get_subtypes(), self::BLOCK_SOFTLY);
+    }
+
+    /**
+     * Processes a delivery notification
+     * @return void
+     */
+    protected function process_delivery_notification(): void {
+        global $DB;
+
+        // Only need to process notifications if consecutive bounce count is being used.
+        if (!helper::use_consecutive_bounces()) {
+            return;
+        }
+
+        $users = $DB->get_records('user', ['email' => $this->get_destination()], 'id ASC', 'id, email');
+        foreach ($users as $user) {
+            // Clear bounces on successful delivery when using consecutive bounce counts.
+            if (!empty(get_user_preferences('email_bounce_count', 0, $user))) {
+                helper::reset_bounce_count($user);
+            }
+        }
+    }
+
+    /**
+     * Processes a bounce notification based on the subtype
+     * @param \stdClass $user
+     * @return void
+     */
+    protected function process_bounce_notification(\stdClass $user): void {
+        if (over_bounce_threshold($user)) {
+            // Can occur if multiple notifications are received close together. No action required.
+            return;
+        }
+        $sendcount = get_user_preferences('email_send_count', 0, $user);
+        $bouncecount = get_user_preferences('email_bounce_count', 0, $user);
+
+        if ($this->should_block_immediately()) {
+            // User should only be able to recover from this if they change their email or have their bounces reset.
+            // This sets the bounce ratio to 1 to improve visibility when something is a hard bounce.
+            $bouncecount = max($sendcount, helper::get_min_bounces());
+            set_user_preference('email_bounce_count', $bouncecount, $user);
+        } else if ($this->should_block_softly()) {
+            // Swap back to set_bounce_count($user) once MDL-73798 is integrated.
+            $bouncecount++;
+            set_user_preference('email_bounce_count', $bouncecount, $user);
+        }
+
+        // If send count isn't set (bug prior to MDL-73798) we need to set a placeholder.
+        if (empty($sendcount) && !empty($bouncecount)) {
+            set_user_preference('email_send_count', $bouncecount, $user);
+        }
+
+        if (over_bounce_threshold($user)) {
+            $event = over_bounce_threshold::create([
+                'relateduserid' => $user->id,
+                'context'  => \context_system::instance(),
+            ]);
+            $event->trigger();
+        }
+    }
+
+    /**
+     * Processes a notification based on the type
+     * @return void
+     */
+    public function process_notification(): void {
+        global $DB;
+
+        if ($this->is_delivery()) {
+            $this->process_delivery_notification();
+            return;
+        }
+
+        if (!$this->is_complaint() && !$this->is_bounce()) {
+            // Invalid request. We should never be here.
+            http_response_code(400);
+            return;
+        }
+
+        // Allow for shared emails. Only create a notification for the first user, but process all.
+        $users = $DB->get_records('user', ['email' => $this->get_destination()], 'id ASC', 'id, email');
+        $user = reset($users);
+
+        // Log all bounces and complaints as an event, even if user is invalid.
+        $event = notification_received::create([
+            'relateduserid' => $user->id ?? null,
+            'context'  => \context_system::instance(),
+            'other' => $this->get_messageasstring(),
+        ]);
+        $event->trigger();
+
+        if (empty($users)) {
+            return;
+        }
+
+        if ($this->is_bounce()) {
+            // Ideally bounce handling would be tracked per email instead of user.
+            foreach ($users as $user) {
+                $this->process_bounce_notification($user);
+            }
+        }
+
+        // TODO: Implement complaint handling.
+    }
+
+    /**
      * Return the message as a string
      * Eg. "Type about x from y"
      * @return string Message as string
@@ -215,7 +360,7 @@ class sns_notification {
     public function get_messageasstring(): string {
         if ($this->is_complaint() || $this->is_bounce()) {
             $subtypes = $this->get_subtypes();
-            $subtypestring = !empty($subtypes) ? ' (' . implode(':', $subtypes) . ')' : '';
+            $subtypestring = !empty($subtypes) ? " ($subtypes)" : '';
             $type = $this->get_type() . $subtypestring;
             return $type . ' about ' . $this->get_source_email() . ' from ' . $this->get_destination();
         } else {

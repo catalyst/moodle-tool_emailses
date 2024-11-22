@@ -69,8 +69,7 @@ class bounces extends check {
                       FROM {user_preferences} up
                  LEFT JOIN {user_preferences} up2 ON up2.name = 'email_send_count' AND up.userid = up2.userid
                      WHERE up.name = 'email_bounce_count' AND CAST(up.value AS INTEGER) > :threshold";
-            // Start with a threshold of 1 as that is the default for manually created users.
-            // TODO: Update when core is fixed.
+            // Start with a threshold of 1 as that was a historical default for manually created users.
             $bounces = $DB->get_records_sql($sql, ['threshold' => 1]);
             $userswithbounces = count($bounces);
 
