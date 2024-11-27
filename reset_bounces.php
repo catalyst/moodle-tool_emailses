@@ -26,14 +26,17 @@
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
-admin_externalpage_setup('userbulk');
+admin_externalpage_setup('tool_emailutils_bounces');
 require_capability('moodle/user:update', context_system::instance());
 
 $confirm = optional_param('confirm', 0, PARAM_BOOL);
+$userid = optional_param('id', null, PARAM_INT);
+$returnurl = optional_param('returnurl', null, PARAM_LOCALURL);
 
-$return = new moodle_url('/admin/user/user_bulk.php');
+$users = empty($userid) ? $SESSION->bulk_users : [$userid];
+$return = new moodle_url($returnurl ?? '/admin/tool/emailutils/bounces.php');
 
-if (empty($SESSION->bulk_users)) {
+if (empty($users)) {
     redirect($return);
 }
 
@@ -41,7 +44,7 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('resetbounces', 'tool_emailutils'));
 
 if ($confirm && confirm_sesskey()) {
-    list($in, $params) = $DB->get_in_or_equal($SESSION->bulk_users);
+    list($in, $params) = $DB->get_in_or_equal($users);
     $rs = $DB->get_recordset_select('user', "id $in", $params, '', 'id, ' . \tool_emailutils\helper::get_username_fields());
     foreach ($rs as $user) {
         \tool_emailutils\helper::reset_bounce_count($user);
@@ -50,16 +53,30 @@ if ($confirm && confirm_sesskey()) {
     echo $OUTPUT->box_start('generalbox', 'notice');
     echo $OUTPUT->notification(get_string('bouncesreset', 'tool_emailutils'), 'notifysuccess');
 
-    $continue = new single_button(new moodle_url($return), get_string('continue'), 'post');
+    $continue = new single_button(new moodle_url($return), get_string('continue'));
     echo $OUTPUT->render($continue);
     echo $OUTPUT->box_end();
 } else {
-    list($in, $params) = $DB->get_in_or_equal($SESSION->bulk_users);
+    list($in, $params) = $DB->get_in_or_equal($users);
     $userlist = $DB->get_records_select_menu('user', "id $in", $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
-    $usernames = implode(', ', $userlist);
-    echo $OUTPUT->heading(get_string('confirmation', 'admin'));
-    $formcontinue = new single_button(new moodle_url('reset_bounces.php', ['confirm' => 1]), get_string('yes'));
-    $formcancel = new single_button(new moodle_url('/admin/user/user_bulk.php'), get_string('no'), 'get');
-    echo $OUTPUT->confirm(get_string('bouncecheckfull', 'tool_emailutils', $usernames), $formcontinue, $formcancel);
+
+    if (empty($userlist)) {
+        echo $OUTPUT->notification(get_string('invaliduserid', 'error'));
+        $continue = new single_button(new moodle_url($return), get_string('continue'));
+        echo $OUTPUT->render($continue);
+    } else {
+        if (\tool_emailutils\helper::use_bounce_ratio()) {
+            echo $OUTPUT->notification(get_string('resetbounceratio', 'tool_emailutils'), 'warning');
+        }
+        $usernames = implode(', ', $userlist);
+        $params = array_filter([
+            'confirm' => 1,
+            'id' => $userid,
+            'returnurl' => $returnurl,
+        ]);
+        $formcontinue = new single_button(new moodle_url('reset_bounces.php', $params), get_string('yes'));
+        $formcancel = new single_button($return, get_string('no'));
+        echo $OUTPUT->confirm(get_string('bouncecheckfull', 'tool_emailutils', $usernames), $formcontinue, $formcancel);
+    }
 }
 echo $OUTPUT->footer();
