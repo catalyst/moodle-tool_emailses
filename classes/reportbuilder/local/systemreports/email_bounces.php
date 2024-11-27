@@ -20,6 +20,7 @@ use context_system;
 use tool_emailutils\reportbuilder\local\entities\email_bounce;
 use core_reportbuilder\system_report;
 use core_reportbuilder\local\entities\user;
+use core_reportbuilder\local\report\action;
 
 /**
  * Email bounces report class implementation.
@@ -44,6 +45,16 @@ class email_bounces extends system_report {
         $this->add_entity($entitymain);
         $this->add_base_condition_simple("{$entitymainalias}.name", 'email_bounce_count');
 
+        // Any columns required by actions should be defined here to ensure they're always available.
+        $this->add_base_fields("{$entitymainalias}.userid");
+
+        if ($this->get_parameter('withcheckboxes', false, PARAM_BOOL)) {
+            $canviewfullnames = has_capability('moodle/site:viewfullnames', context_system::instance());
+            $this->set_checkbox_toggleall(static function(\stdClass $row) use ($canviewfullnames): array {
+                return [$row->userid, fullname($row, $canviewfullnames)];
+            });
+        }
+
         // We can join the "user" entity to our "main" entity using standard SQL JOIN.
         $entityuser = new user();
         $entityuseralias = $entityuser->get_table_alias('user');
@@ -54,6 +65,7 @@ class email_bounces extends system_report {
         // Now we can call our helper methods to add the content we want to include in the report.
         $this->add_columns();
         $this->add_filters();
+        $this->add_actions();
 
         // Set if report can be downloaded.
         $this->set_downloadable(true, get_string('reportbounces', 'tool_emailutils'));
@@ -106,5 +118,21 @@ class email_bounces extends system_report {
         ];
 
         $this->add_filters_from_entities($filters);
+    }
+
+    /**
+     * Add the system report actions. An extra column will be appended to each row, containing all actions added here
+     *
+     * Note the use of ":id" placeholder which will be substituted according to actual values in the row
+     */
+    protected function add_actions(): void {
+        // Action to reset the bounce count.
+        $this->add_action((new action(
+            new \moodle_url('/admin/tool/emailutils/reset_bounces.php', ['id' => ':userid']),
+            new \pix_icon('i/reload', ''),
+            [],
+            false,
+            new \lang_string('resetbounces', 'tool_emailutils'),
+        )));
     }
 }

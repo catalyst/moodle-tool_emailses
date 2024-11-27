@@ -33,7 +33,7 @@ class hook_callbacks {
      */
     public static function extend_bulk_user_actions(\core_user\hook\extend_bulk_user_actions $hook): void {
         if (has_capability('moodle/site:config', \context_system::instance())) {
-            $hook->add_action('tool_ses_reset_bounces', new \action_link(
+            $hook->add_action('tool_emailutils_reset_bounces', new \action_link(
                 new \moodle_url('/admin/tool/emailutils/reset_bounces.php'),
                 get_string('resetbounces', 'tool_emailutils')
             ));

@@ -30,6 +30,8 @@ use tool_emailutils\reportbuilder\local\systemreports\email_bounces;
 
 require(__DIR__.'/../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
+require_once($CFG->dirroot.'/'.$CFG->admin.'/user/lib.php');
+require_once($CFG->dirroot.'/'.$CFG->admin.'/user/user_bulk_forms.php');
 
 admin_externalpage_setup('tool_emailutils_bounces', '', [], '', ['pagelayout' => 'report']);
 
@@ -47,8 +49,28 @@ if (empty($handlebounces)) {
     ]), 'info');
 }
 
-$report = system_report_factory::create(email_bounces::class, context_system::instance());
+echo html_writer::start_div('', ['data-region' => 'report-user-list-wrapper']);
+
+// Exclude all actions besides reset bounces.
+$actionames = array_keys((new user_bulk_action_form())->get_actions());
+$excludeactions = array_diff($actionames, ['tool_emailutils_reset_bounces']);
+
+$bulkactions = new user_bulk_action_form(new moodle_url('/admin/user/user_bulk.php'),
+    ['excludeactions' => $excludeactions, 'passuserids' => true, 'hidesubmit' => true],
+    'post', '',
+    ['id' => 'user-bulk-action-form']);
+$bulkactions->set_data(['returnurl' => $PAGE->url->out_as_local_url(false)]);
+
+$report = system_report_factory::create(email_bounces::class, context_system::instance(),
+    parameters: ['withcheckboxes' => $bulkactions->has_bulk_actions()]);
 
 echo $report->output();
+
+if ($bulkactions->has_bulk_actions()) {
+    $PAGE->requires->js_call_amd('core_admin/bulk_user_actions', 'init');
+    $bulkactions->display();
+}
+
+echo html_writer::end_div();
 
 echo $OUTPUT->footer();
