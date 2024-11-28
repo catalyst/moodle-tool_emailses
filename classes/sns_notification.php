@@ -285,8 +285,7 @@ class sns_notification {
 
         if ($this->should_block_immediately()) {
             // User should only be able to recover from this if they change their email or have their bounces reset.
-            // This sets the bounce ratio to 1 to improve visibility when something is a hard bounce.
-            $bouncecount = max($sendcount, helper::get_min_bounces());
+            $bouncecount = helper::get_min_bounces();
             set_user_preference('email_bounce_count', $bouncecount, $user);
         } else if ($this->should_block_softly()) {
             // Swap back to set_bounce_count($user) once MDL-73798 is integrated.
@@ -344,12 +343,26 @@ class sns_notification {
 
         if ($this->is_bounce()) {
             // Ideally bounce handling would be tracked per email instead of user.
+            if (helper::use_consecutive_bounces()) {
+                helper::check_consecutive_bounces($this->get_destination(), $users);
+            }
             foreach ($users as $user) {
                 $this->process_bounce_notification($user);
             }
         }
 
         // TODO: Implement complaint handling.
+
+        // Save to emailutils log. This should be done last as processing may increase send count.
+        // Time should represent when this was processed - send time will be in message if needed.
+        $DB->insert_record('tool_emailutils_log', [
+            'time' => time(),
+            'type' => $this->get_type(),
+            'subtypes' => $this->get_subtypes(),
+            'email' => $this->get_destination(),
+            'message' => $this->messageraw,
+            'sendcount' => helper::get_sum_send_count($users),
+        ]);
     }
 
     /**
