@@ -151,4 +151,80 @@ class helper {
             self::get_bounce_ratio(),
         ];
     }
+
+    /**
+     * Get the most recent bounce recorded for an email address
+     *
+     * @param string $email
+     * @return \stdClass|false
+     */
+    public static function get_most_recent_bounce(string $email): mixed {
+        global $DB;
+
+        $params = [
+            'email' => $email,
+        ];
+        $sql = "SELECT *
+                  FROM {tool_emailutils_log}
+                 WHERE type = 'Bounce' AND email = :email
+                 ORDER BY time DESC
+                 LIMIT 1";
+        return $DB->get_record_sql($sql, $params);
+    }
+
+    /**
+     * Gets the sum of the send count for multiple users
+     * @param array $users array of users or userids
+     * @return int sum of send count
+     */
+    public static function get_sum_send_count(array $users): int {
+        $sendcount = 0;
+        foreach ($users as $user) {
+            $sendcount += get_user_preferences('email_send_count', 0, $user);
+        }
+        return $sendcount;
+    }
+
+    /**
+     * Gets the max bounce count from a group of users
+     * @param array $users array of users or userids
+     * @return int max bounce count
+     */
+    public static function get_max_bounce_count(array $users): int {
+        $maxbounces = 0;
+        foreach ($users as $user) {
+            $maxbounces = max($maxbounces, get_user_preferences('email_bounce_count', 0, $user));
+        }
+        return $maxbounces;
+    }
+
+    /**
+     * Checks whether bounces are likely to be consecutive, and if not reset the bounce count.
+     * This is a fallback in case delivery notifications are not enabled.
+     *
+     * @param string $email
+     * @param array $users
+     * @return void
+     */
+    public static function check_consecutive_bounces(string $email, array $users): void {
+        $recentbounce = self::get_most_recent_bounce($email);
+        if (empty($recentbounce)) {
+            // No data on the previous bounce.
+            return;
+        }
+
+        $sendcount = self::get_sum_send_count($users);
+        $prevsendcount = $recentbounce->sendcount ?? 0;
+        $sincelastbounce = $sendcount - $prevsendcount;
+
+        // The only things we can compare are the previous send count and time.
+        // A direct comparison in sendcount isn't accurate because notifications may be delayed, so use a buffer.
+        // Minbounces is ideal since future notifications would push it over the threshold.
+        $buffer = min(self::get_min_bounces(), 5);
+        if ($sincelastbounce >= $buffer) {
+            foreach ($users as $user) {
+                self::reset_bounce_count($user);
+            }
+        }
+    }
 }

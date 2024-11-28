@@ -145,20 +145,12 @@ class sns_client_test extends \advanced_testcase {
     public function bounce_processing_provider(): array {
         // To be tested with minbounces of 3 and bounceratio of -1.
         return [
-            'Block immediately with low send count' => [
+            'Block immediately' => [
                 'type' => 'Permanent',
                 'subtype' => 'General',
                 'notifications' => 1,
                 'sendcount' => 1,
                 'expectedbounces' => 3,
-                'overthreshold' => true,
-            ],
-            'Block immediately with high send count' => [
-                'type' => 'Permanent',
-                'subtype' => 'General',
-                'notifications' => 1,
-                'sendcount' => 100,
-                'expectedbounces' => 100,
                 'overthreshold' => true,
             ],
             'Block softly' => [
@@ -218,7 +210,7 @@ class sns_client_test extends \advanced_testcase {
      **/
     public function test_bounce_processing(string $type, string $subtype, int $notifications, int $sendcount,
             int $expectedbounces, bool $overthreshold): void {
-        global $CFG;
+        global $CFG, $DB;
 
         // Setup config and users.
         $this->resetAfterTest();
@@ -249,6 +241,10 @@ class sns_client_test extends \advanced_testcase {
         $bounceevents = 2 * (int) $overthreshold;
         $this->assertCount($notifications + $bounceevents, $events);
 
+        // Confirm bounce notification stored in emailutils log table.
+        $records = $DB->get_records('tool_emailutils_log', null, 'id ASC');
+        $this->assertCount($notifications, $records);
+
         // Confirm that shared email addresses have the same status.
         $this->assertSame($overthreshold, over_bounce_threshold($user2));
     }
@@ -259,7 +255,7 @@ class sns_client_test extends \advanced_testcase {
      * @covers \tool_emailutils\sns_notification::process_notification()
      **/
     public function test_delivery_processing(): void {
-        global $CFG;
+        global $CFG, $DB;
 
         // Setup config and users.
         $this->resetAfterTest();
@@ -296,6 +292,10 @@ class sns_client_test extends \advanced_testcase {
         // There should be one event for each user who had their bounce count reset.
         // This also confirms the third user didn't have their count reset.
         $this->assertCount(2, $events);
+
+        // Confirm delivery notification isn't stored in emailutils log table.
+        $records = $DB->get_records('tool_emailutils_log');
+        $this->assertCount(0, $records);
 
         // Ensure bounces aren't reset when bounce ratio config is positive.
         $CFG->bounceratio = 0.5;

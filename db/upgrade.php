@@ -78,5 +78,29 @@ function xmldb_tool_emailutils_upgrade($oldversion) {
         // Emailutils savepoint reached.
         upgrade_plugin_savepoint(true, 2024111800, 'tool', 'emailutils');
     }
+
+    if ($oldversion < 2024112801) {
+
+        // Define field subtypes to be added to tool_emailutils_log.
+        $table = new xmldb_table('tool_emailutils_log');
+        $field = new xmldb_field('subtypes', XMLDB_TYPE_CHAR, '32', null, null, null, null, 'type');
+
+        // Conditionally launch add field subtypes.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field sendcount to be added to tool_emailutils_log.
+        $field = new xmldb_field('sendcount', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'message');
+
+        // Conditionally launch add field sendcount.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Emailutils savepoint reached.
+        upgrade_plugin_savepoint(true, 2024112801, 'tool', 'emailutils');
+    }
+
     return true;
 }
