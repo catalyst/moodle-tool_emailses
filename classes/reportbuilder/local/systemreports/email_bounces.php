@@ -18,6 +18,7 @@ namespace tool_emailutils\reportbuilder\local\systemreports;
 
 use context_system;
 use tool_emailutils\reportbuilder\local\entities\email_bounce;
+use tool_emailutils\reportbuilder\local\entities\notification_log;
 use core_reportbuilder\system_report;
 use core_reportbuilder\local\entities\user;
 use core_reportbuilder\local\report\action;
@@ -62,6 +63,21 @@ class email_bounces extends system_report {
             ->add_join("LEFT JOIN {user} {$entityuseralias} ON {$entityuseralias}.id = {$entitymainalias}.userid")
         );
 
+        // Join with the latest entry in the notification log for each user.
+        $entitylog = new notification_log();
+        $entitylogalias = $entitylog->get_table_alias('tool_emailutils_log');
+        $this->add_entity($entitylog
+            ->add_join("LEFT JOIN (
+                           SELECT l1.*
+                            FROM {tool_emailutils_log} l1
+                            WHERE l1.id = (
+                                SELECT MAX(l2.id)
+                                FROM {tool_emailutils_log} l2
+                                WHERE l2.email = l1.email
+                            )
+                        ) {$entitylogalias} ON {$entitylogalias}.email = {$entityuseralias}.email")
+        );
+
         // Now we can call our helper methods to add the content we want to include in the report.
         $this->add_columns();
         $this->add_filters();
@@ -94,6 +110,7 @@ class email_bounces extends system_report {
             'email_bounce:bounces',
             'email_bounce:send',
             'email_bounce:ratio',
+            'notification_log:subtypes',
         ];
 
         $this->add_columns_from_entities($columns);
