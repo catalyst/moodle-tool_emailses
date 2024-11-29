@@ -27,11 +27,15 @@
         "handlebounces": true,
         "minbounces": 10,
         "bounceratio": 0.2,
-        "breakdown": true,
-        "messages": []
+        "breakdown": [],
+        "total": {
+            "overthreshold": 5,
+            "overbouncereq": 3,
+            "underbouncereq": 2
+        }
     }
 }}
-<h5>Config</h5>
+<h5>{{#str}} configuration {{/str}}</h5>
 <ul>
     <li>handlebounces: {{handlebounces}}</li>
     {{#handlebounces}}
@@ -39,11 +43,31 @@
     <li>bounceratio: {{bounceratio}}</li>
     {{/handlebounces}}
 </ul>
-{{#breakdown}}
-    <h5>Breakdown</h5>
-    <ul>
-        {{#messages}}
-            <li>{{.}}</li>
-        {{/messages}}
-    </ul>
-{{/breakdown}}
+
+<h5>{{#str}} bouncebreakdown, tool_emailutils {{/str}}</h5>
+<table class="admintable generaltable table-bordered table-sm w-auto">
+    <thead>
+    <tr>
+        <th>{{#str}} domain, tool_emailutils {{/str}}</th>
+        <th class="text-end">{{#str}} check:bounces:breakdown:overthreshold, tool_emailutils{{/str}}</th>
+        <th class="text-end">{{#str}} check:bounces:breakdown:overminbounces, tool_emailutils{{/str}}</th>
+        <th class="text-end">{{#str}} check:bounces:breakdown:underminbounces, tool_emailutils{{/str}}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{#breakdown}}
+        <tr>
+            <td>{{ domain }}</td>
+            <td class="text-end">{{ overthreshold }}</td>
+            <td class="text-end">{{ overbouncereq }}</td>
+            <td class="text-end">{{ underbouncereq }}</td>
+        </tr>
+    {{/breakdown}}
+    <tr class="font-weight-bold">
+        <td>{{#str}} total {{/str}}</td>
+        <td class="text-end">{{ total.overthreshold }}</td>
+        <td class="text-end">{{ total.overbouncereq }}</td>
+        <td class="text-end">{{ total.underbouncereq }}</td>
+    </tr>
+    </tbody>
+</table>

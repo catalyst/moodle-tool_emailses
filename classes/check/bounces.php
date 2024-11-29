@@ -62,53 +62,76 @@ class bounces extends check {
         [$handlebounces, $minbounces, $bounceratio] = helper::get_bounce_config();
         if (empty($handlebounces)) {
             $status = result::OK;
-            $summary = "Moodle is not configured to handle bounces.";
+            $summary = get_string('check:bounces:disabled', 'tool_emailutils');
             $details = $summary;
         } else {
-            $sql = "SELECT up.userid, up.value AS bouncecount, up2.value AS sendcount
+            $domainsql = $DB->sql_substr('LOWER(u.email)', $DB->sql_position("'@'", 'u.email') . ' + 1');
+            $sql = "SELECT up.userid, up.value AS bouncecount, up2.value AS sendcount, $domainsql AS domain
                       FROM {user_preferences} up
                  LEFT JOIN {user_preferences} up2 ON up2.name = 'email_send_count' AND up.userid = up2.userid
+                      JOIN {user} u ON u.id = up.userid
                      WHERE up.name = 'email_bounce_count' AND CAST(up.value AS INTEGER) > :threshold";
             // Start with a threshold of 1 as that was a historical default for manually created users.
-            $bounces = $DB->get_records_sql($sql, ['threshold' => 1]);
+            $bounces = $DB->get_records_sql($sql, ['threshold' => 0]);
             $userswithbounces = count($bounces);
 
             // Split bounces into 3 groups based on whether they meet bounce threshold criteria.
-            $overthreshold = 0;
-            $overbouncereq = 0;
-            $underbouncereq = 0;
+            $breakdown = [];
+            $total = (object) [
+                'overthreshold' => 0,
+                'overbouncereq' => 0,
+                'underbouncereq' => 0,
+            ];
             foreach ($bounces as $bounce) {
                 $bouncereq = $bounce->bouncecount >= $minbounces;
-                $ratioreq = !empty($bounce->sendcount) && ($bounce->bouncecount / $bounce->sendcount >= $bounceratio);
+                // If there's no send count due to MDL-73798, treat it as 1.
+                $sendcount = !empty($bounce->sendcount) ? $bounce->sendcount : 1;
+                $ratioreq = $bounce->bouncecount / $sendcount >= $bounceratio;
+
+                if (!isset($breakdown[$bounce->domain])) {
+                    $breakdown[$bounce->domain] = (object) [
+                        'domain' => $bounce->domain,
+                        'overthreshold' => 0,
+                        'overbouncereq' => 0,
+                        'underbouncereq' => 0,
+                    ];
+                }
                 if ($bouncereq && $ratioreq) {
-                    $overthreshold++;
+                    $total->overthreshold++;
+                    $breakdown[$bounce->domain]->overthreshold++;
                 } else if (!$ratioreq) {
-                    $overbouncereq++;
+                    $total->overbouncereq++;
+                    $breakdown[$bounce->domain]->overbouncereq++;
                 } else {
-                    $underbouncereq++;
+                    $total->underbouncereq++;
+                    $breakdown[$bounce->domain]->underbouncereq++;
                 }
             }
 
-            $messages = [];
+            // Order breakdown by users over threshold, overbouncereq, then underbouncereq.
+            usort($breakdown, function ($a, $b) {
+                if ($a->overthreshold != $b->overthreshold) {
+                    return $b->overthreshold - $a->overthreshold;
+                }
+                if ($a->overbouncereq != $b->overbouncereq) {
+                    return $b->overbouncereq - $a->overbouncereq;
+                }
+                return $b->underbouncereq - $a->underbouncereq;
+            });
+
             if (!$userswithbounces) {
                 $status = result::OK;
-                $summary = "No users have had emails rejected.";
-            } else if (!$overthreshold) {
+                $summary = get_string('check:bounces:none', 'tool_emailutils');
+            } else if (!$total->overthreshold) {
                 $status = result::OK;
-                $summary = "No users are over the Moodle bounce threshold, but $userswithbounces have had emails rejected";
+                $summary = get_string('check:bounces:underthreshold', 'tool_emailutils');
             } else {
                 $status = result::WARNING;
-                $summary = "Found $overthreshold users over the Moodle bounce threshold";
-                $messages[] = "$overthreshold user(s) have at least $minbounces email rejections with a bounce ratio over $bounceratio";
-            }
-
-            if ($overbouncereq) {
-                $messages[] = "$overbouncereq user(s) have at least $minbounces email rejections with a bounce ratio under $bounceratio";
-            }
-
-            if ($underbouncereq) {
-                $allowedbounces = $minbounces - 1;
-                $messages[] = "$underbouncereq user(s) have between 1 and $allowedbounces email rejections";
+                $summary = get_string('check:bounces:overthreshold', 'tool_emailutils', [
+                    'count' => $total->overthreshold,
+                    'minbounces' => $minbounces,
+                    'bounceratio' => $bounceratio,
+                ]);
             }
 
             // Render config used for calculating threshold.
@@ -116,8 +139,8 @@ class bounces extends check {
                 'handlebounces' => $handlebounces,
                 'minbounces' => $minbounces,
                 'bounceratio' => $bounceratio,
-                'breakdown' => true,
-                'messages' => $messages,
+                'breakdown' => $breakdown,
+                'total' => $total,
             ]);
         }
 
