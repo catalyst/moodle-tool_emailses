@@ -17,12 +17,14 @@
 namespace tool_emailutils\reportbuilder\local\entities;
 
 use lang_string;
+use core\output\html_writer;
 use core_reportbuilder\local\entities\base;
 use core_reportbuilder\local\filters\date;
 use core_reportbuilder\local\filters\text;
 use core_reportbuilder\local\helpers\format;
 use core_reportbuilder\local\report\column;
 use core_reportbuilder\local\report\filter;
+use tool_emailutils\sns_notification;
 
 /**
  * Notification log list entity class class implementation.
@@ -116,7 +118,17 @@ class notification_log extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_TEXT)
             ->add_fields("{$tablealias}.subtypes")
-            ->set_is_sortable(true);
+            ->set_is_sortable(true)
+            ->add_callback(function(?string $subtypes): string {
+                if (empty($subtypes)) {
+                    return '';
+                } else if (in_array($subtypes, sns_notification::BLOCK_IMMEDIATELY)) {
+                    return html_writer::span($subtypes, 'alert alert-danger p-2');
+                } else if (in_array($subtypes, sns_notification::BLOCK_IMMEDIATELY)) {
+                    return html_writer::span($subtypes, 'alert alert-warning p-2');
+                }
+                return $subtypes;
+            });
 
         // Time column.
         $columns[] = (new column(

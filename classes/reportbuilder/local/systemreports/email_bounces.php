@@ -132,6 +132,7 @@ class email_bounces extends system_report {
             'user:fullname',
             'user:username',
             'user:email',
+            'notification_log:subtypes',
         ];
 
         $this->add_filters_from_entities($filters);
