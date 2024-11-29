@@ -231,7 +231,7 @@ class dns_util {
             $parts = explode('.', $domain);
             $domain = join('.', array_slice($parts, 1));
         }
-        return ['', ''];
+        return ['', '', ''];
     }
 
     /**
