@@ -53,8 +53,7 @@ if ($confirm && confirm_sesskey()) {
     echo $OUTPUT->box_start('generalbox', 'notice');
     echo $OUTPUT->notification(get_string('bouncesreset', 'tool_emailutils'), 'notifysuccess');
 
-    $continue = new single_button(new moodle_url($return), get_string('continue'));
-    echo $OUTPUT->render($continue);
+    echo html_writer::link($return, get_string('continue'), ['class' => 'btn btn-primary']);
     echo $OUTPUT->box_end();
 } else {
     list($in, $params) = $DB->get_in_or_equal($users);
@@ -62,8 +61,7 @@ if ($confirm && confirm_sesskey()) {
 
     if (empty($userlist)) {
         echo $OUTPUT->notification(get_string('invaliduserid', 'error'));
-        $continue = new single_button(new moodle_url($return), get_string('continue'));
-        echo $OUTPUT->render($continue);
+        echo html_writer::link($return, get_string('continue'), ['class' => 'btn btn-primary']);
     } else {
         if (\tool_emailutils\helper::use_bounce_ratio()) {
             echo $OUTPUT->notification(get_string('resetbounceratio', 'tool_emailutils'), 'warning');
