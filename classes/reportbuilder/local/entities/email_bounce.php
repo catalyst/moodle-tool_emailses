@@ -17,10 +17,12 @@
 namespace tool_emailutils\reportbuilder\local\entities;
 
 use lang_string;
+use core\output\html_writer;
 use core_reportbuilder\local\entities\base;
 use core_reportbuilder\local\filters\number;
 use core_reportbuilder\local\report\column;
 use core_reportbuilder\local\report\filter;
+use tool_emailutils\helper;
 
 /**
  * Email bounce entity class class implementation.
@@ -102,7 +104,13 @@ class email_bounce extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_INTEGER)
             ->add_field($DB->sql_cast_char2int("{$tablealias}.value"), 'bounces')
-            ->set_is_sortable(true);
+            ->set_is_sortable(true)
+            ->add_callback(function(int $value): string {
+                if ($value >= helper::get_min_bounces()) {
+                    return html_writer::span($value, 'alert alert-danger p-2');
+                }
+                return $value;
+            });
 
         // Emails send column.
         $columns[] = (new column(
@@ -127,8 +135,13 @@ class email_bounce extends base {
             ->set_type(column::TYPE_FLOAT)
             ->add_field("CASE WHEN $sendsql = 0 THEN NULL ELSE $bouncesql / $sendsql END", 'ratio')
             ->set_is_sortable(true)
+            ->set_is_available(helper::use_bounce_ratio())
             ->add_callback(function(?float $value): string {
-                return format_float($value, 2);
+                $float = format_float($value, 2);
+                if ($value > helper::get_bounce_ratio()) {
+                    return html_writer::span($float, 'alert alert-danger p-2');
+                }
+                return $float;
             });
 
         return $columns;
