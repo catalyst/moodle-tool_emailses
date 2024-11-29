@@ -37,7 +37,7 @@ if ($hassiteconfig) {
         new moodle_url('/admin/tool/emailutils/dkim.php')
     ));
 
-    $ADMIN->add('tool_emailutils', new admin_externalpage(
+    $ADMIN->add('email', new admin_externalpage(
         'tool_emailutils_bounces',
         get_string('reportbounces', 'tool_emailutils'),
         new moodle_url('/admin/tool/emailutils/bounces.php')
@@ -140,9 +140,11 @@ if ($hassiteconfig) {
 
     $ADMIN->add('tool_emailutils', $settings);
 
-    $ADMIN->add('tool_emailutils', new admin_externalpage(
-        'tool_emailutils_suppressionlist',
-        new lang_string('aws_suppressionlist', 'tool_emailutils'),
-        new moodle_url('/admin/tool/emailutils/aws/suppression_list.php')
-    ));
+    if (get_config('tool_emailutils', 'enable_suppression_list')) {
+        $ADMIN->add('email', new admin_externalpage(
+            'tool_emailutils_suppressionlist',
+            new lang_string('aws_suppressionlist', 'tool_emailutils'),
+            new moodle_url('/admin/tool/emailutils/aws/suppression_list.php')
+        ));
+    }
 }
