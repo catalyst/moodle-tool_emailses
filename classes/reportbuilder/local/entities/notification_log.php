@@ -17,7 +17,6 @@
 namespace tool_emailutils\reportbuilder\local\entities;
 
 use lang_string;
-use core\output\html_writer;
 use core_reportbuilder\local\entities\base;
 use core_reportbuilder\local\filters\date;
 use core_reportbuilder\local\filters\text;
@@ -123,9 +122,9 @@ class notification_log extends base {
                 if (empty($subtypes)) {
                     return '';
                 } else if (in_array($subtypes, sns_notification::BLOCK_IMMEDIATELY)) {
-                    return html_writer::span($subtypes, 'alert alert-danger p-2');
+                    return \html_writer::span($subtypes, 'alert alert-danger p-2');
                 } else if (in_array($subtypes, sns_notification::BLOCK_IMMEDIATELY)) {
-                    return html_writer::span($subtypes, 'alert alert-warning p-2');
+                    return \html_writer::span($subtypes, 'alert alert-warning p-2');
                 }
                 return $subtypes;
             });
