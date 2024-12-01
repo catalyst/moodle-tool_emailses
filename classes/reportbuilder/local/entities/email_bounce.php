@@ -17,7 +17,6 @@
 namespace tool_emailutils\reportbuilder\local\entities;
 
 use lang_string;
-use core\output\html_writer;
 use core_reportbuilder\local\entities\base;
 use core_reportbuilder\local\filters\number;
 use core_reportbuilder\local\report\column;
@@ -107,7 +106,7 @@ class email_bounce extends base {
             ->set_is_sortable(true)
             ->add_callback(function(int $value): string {
                 if ($value >= helper::get_min_bounces()) {
-                    return html_writer::span($value, 'alert alert-danger p-2');
+                    return \html_writer::span($value, 'alert alert-danger p-2');
                 }
                 return $value;
             });
@@ -139,7 +138,7 @@ class email_bounce extends base {
             ->add_callback(function(?float $value): string {
                 $float = format_float($value, 2);
                 if ($value > helper::get_bounce_ratio()) {
-                    return html_writer::span($float, 'alert alert-danger p-2');
+                    return \html_writer::span($float, 'alert alert-danger p-2');
                 }
                 return $float;
             });
