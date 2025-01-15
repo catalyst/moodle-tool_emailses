@@ -1,6 +1,4 @@
-<a href="https://github.com/catalyst/moodle-tool_emailutils/actions?query=branch%3AMOODLE_39_STABLE">
-<img src="https://github.com/catalyst/moodle-tool_emailutils/actions/workflows/ci.yml/badge.svg?branch=MOODLE_39_STABLE" >
-</a>
+[![ci](https://github.com/catalyst/moodle-tool_emailutils/actions/workflows/ci.yml/badge.svg?branch=MOODLE_39_STABLE)](https://github.com/catalyst/moodle-tool_emailutils/actions/workflows/ci.yml?branch=MOODLE_39_STABLE)
 
 # Email utilities for Moodle
 
